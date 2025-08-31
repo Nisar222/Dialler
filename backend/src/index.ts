@@ -8,6 +8,8 @@ import healthRouter from './routes/health';
 import authRouter from './routes/auth';
 import adminRouter from './routes/admin';
 import webhooksRouter from './routes/webhooks';
+import dialerRouter from './routes/dialer';
+import campaignsRouter from './routes/campaigns';
 
 const app = express();
 
@@ -28,6 +30,8 @@ app.use(healthRouter);
 app.use(authRouter);
 app.use(adminRouter);
 app.use(webhooksRouter);
+app.use(dialerRouter);
+app.use(campaignsRouter);
 
 const port = Number(env.PORT);
 app.listen(port, () => {
