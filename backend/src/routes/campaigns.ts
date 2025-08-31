@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { requireAuth } from '../middleware/auth';
 import { prisma } from '../lib/prisma';
+import { dncrScreenQueue } from '../queues';
 
 const router = Router();
 
@@ -13,8 +14,13 @@ router.post('/campaigns', requireAuth(['ADMIN', 'SUPERVISOR']), async (req, res)
 });
 
 router.post('/campaigns/:id/upload', requireAuth(['ADMIN', 'SUPERVISOR']), async (req, res) => {
-	// TODO: accept CSV/XLSX multipart, enqueue dncr-screen jobs
-	res.json({ ok: true, message: 'Upload accepted; DNCR screening scheduled.' });
+	// NOTE: For now accept JSON body { contacts: [{ name, number }] } for dev; file upload coming next
+	const { contacts } = req.body as { contacts: Array<{ name: string; number: string; meta?: any }> };
+	if (!Array.isArray(contacts) || contacts.length === 0) return res.status(400).json({ error: 'no_contacts' });
+	// enqueue screening in batches
+	const campaignId = req.params.id;
+	await dncrScreenQueue.add('screen', { campaignId, contacts }, { removeOnComplete: true, removeOnFail: 100 });
+	res.json({ ok: true, enqueued: contacts.length });
 });
 
 router.get('/campaigns/:id/contacts', requireAuth(), async (req, res) => {
