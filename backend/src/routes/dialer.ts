@@ -2,8 +2,9 @@ import { Router } from 'express';
 import { requireAuth } from '../middleware/auth';
 import { prisma } from '../lib/prisma';
 import { dncrCheck } from '../services/dncr';
-import { encryptString, hashNumberE164 } from '../lib/crypto';
+import { encryptString, hashNumberE164, decryptToString } from '../lib/crypto';
 import { initiateOutboundCall, bridgeCallToQueue } from '../services/threecx';
+import { withinBusinessHours } from '../utils/businessHours';
 
 const router = Router();
 
@@ -12,6 +13,7 @@ router.post('/dialer/call', requireAuth(['AGENT', 'SUPERVISOR', 'ADMIN']), async
 	const queueId = queue_id ?? Number(process.env.THREECX_QUEUE_DEFAULT || 800);
 	const number = msisdn || (await getContactNumber(contact_id!));
 	if (!number) return res.status(400).json({ error: 'missing_number' });
+	if (!withinBusinessHours()) return res.status(403).json({ error: 'after_hours' });
 	// DNCR check
 	const dncr = await dncrCheck(number);
 	await writeDncrAudit(number, dncr, req);
@@ -42,8 +44,7 @@ router.get('/dialer/status/:call_id', requireAuth(), async (req, res) => {
 async function getContactNumber(contactId: string) {
 	const c = await prisma.contact.findUnique({ where: { id: contactId } });
 	if (!c) return null;
-	// decrypt not required for dialing here because we do not have decrypt function exposed
-	return null; // TODO: store plain e164 at call time via secure vault if required
+	return decryptToString(Buffer.from(c.numberE164Enc));
 }
 
 async function writeDncrAudit(number: string, dncr: any, req: any) {
@@ -55,7 +56,7 @@ async function writeDncrAudit(number: string, dncr: any, req: any) {
 		allow: dncr.allow,
 		reasonCode: dncr.reason_code,
 		policyVersion: 'v1',
-		ctxJson: { user_id: req.user?.uid, campaign_id: req.body?.campaign_id, ip: req.ip, ua: req.headers['user-agent'] },
+		ctxJson: { user_id: (req as any).user?.uid, campaign_id: req.body?.campaign_id, ip: req.ip, ua: req.headers['user-agent'] },
 		dncrResponseJson: dncr,
 		latencyMs: 0
 	}});
