@@ -1,0 +1,163 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTGRES_URL")
+}
+
+model User {
+  id         String   @id @default(cuid())
+  name       String
+  email      String   @unique
+  passHash   String
+  role       UserRole
+  status     UserStatus @default(ACTIVE)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  agent      Agent?
+}
+
+enum UserRole {
+  ADMIN
+  SUPERVISOR
+  AGENT
+  AUDITOR
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+  LOCKED
+}
+
+model Agent {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  extension  Int
+  queueIds   Int[]    @db.Int4
+  status     AgentStatus @default(AVAILABLE)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  calls      Call[]
+}
+
+enum AgentStatus {
+  AVAILABLE
+  BUSY
+  OFFLINE
+}
+
+model Campaign {
+  id           String   @id @default(cuid())
+  name         String
+  status       CampaignStatus @default(DRAFT)
+  defaultCli   String
+  queueId      Int      @default(800)
+  createdById  String
+  createdBy    User     @relation(fields: [createdById], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  contacts     Contact[]
+  calls        Call[]
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum CampaignStatus {
+  DRAFT
+  READY
+  RUNNING
+  PAUSED
+  COMPLETED
+}
+
+model Contact {
+  id                String   @id @default(cuid())
+  campaignId        String
+  campaign          Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  name              String
+  numberE164Enc     Bytes
+  numberHash        String   @index
+  metaJson          Json?
+  dncrStatus        DncrStatus @default(PENDING)
+  lastDncrCheckAt   DateTime?
+  internalDnc       Boolean @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  calls             Call[]
+
+  @@index([campaignId])
+}
+
+enum DncrStatus {
+  PENDING
+  ALLOWED
+  BLOCKED
+}
+
+model Call {
+  id               String   @id @default(cuid())
+  contactId        String
+  contact          Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  campaignId       String
+  campaign         Campaign @relation(fields: [campaignId], references: [id])
+  agentId          String?
+  agent            Agent?   @relation(fields: [agentId], references: [id])
+  queueId          Int
+  cli              String
+  callId3cx        String?  @unique
+  status           CallStatus @default(INITIATED)
+  startedAt        DateTime @default(now())
+  connectedAt      DateTime?
+  endedAt          DateTime?
+  durationSec      Int?
+  disposition      String?
+  recordingUrlSigned String?
+  metricsJson      Json?
+
+  @@index([campaignId, status])
+  @@index([agentId])
+  @@index([queueId])
+}
+
+enum CallStatus {
+  INITIATED
+  RINGING
+  CONNECTED
+  BRIDGED
+  COMPLETED
+  FAILED
+  BUSY
+  NO_ANSWER
+  DNCR_BLOCKED
+}
+
+model DncrAudit {
+  id                 String   @id @default(cuid())
+  checkedAt          DateTime @default(now())
+  numberHash         String   @index
+  numberE164Enc      Bytes
+  allow              Boolean
+  reasonCode         String
+  policyVersion      String
+  ctxJson            Json
+  dncrResponseJson   Json
+  latencyMs          Int
+
+  @@index([checkedAt])
+}
+
+model Webhook3cx {
+  id               String   @id @default(cuid())
+  receivedAt       DateTime @default(now())
+  eventType        String
+  payloadJson      Json
+  signatureOk      Boolean
+  processingStatus String   @default("PENDING")
+
+  @@index([receivedAt])
+}
