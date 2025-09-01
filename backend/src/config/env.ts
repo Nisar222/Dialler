@@ -3,12 +3,14 @@ import { z } from 'zod';
 const EnvSchema = z.object({
 	PORT: z.string().default('4000'),
 	CORS_ALLOWED_ORIGINS: z.string().default(''),
-	POSTGRES_URL: z.string(),
+	DATABASE_URL: z.string(),
 	REDIS_URL: z.string(),
 	JWT_SECRET: z.string().min(16),
 	REFRESH_SECRET: z.string().min(16),
 	DNCR_BASE_URL: z.string().url(),
 	DNCR_BEARER: z.string().optional(),
+	DNCR_TIMEOUT_MS: z.string().default('2000'),
+	DNCR_RETRY_DELAY_MS: z.string().default('100'),
 	THREECX_BASE_URL: z.string().url(),
 	THREECX_API_ID: z.string(),
 	THREECX_API_KEY: z.string(),
@@ -28,7 +30,6 @@ const EnvSchema = z.object({
 	MAIL_PASS: z.string().optional(),
 	MAIL_FROM: z.string().optional(),
 	MAIL_NAME: z.string().default('AYN Digital'),
-	// PII
 });
 
 export type AppEnv = z.infer<typeof EnvSchema>;
