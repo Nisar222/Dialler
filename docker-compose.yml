@@ -35,9 +35,14 @@ services:
       - S3_REGION=${S3_REGION}
       - KMS_KEY_ALIAS=${KMS_KEY_ALIAS}
       - S3_BACKUP_BUCKET=${S3_BACKUP_BUCKET}
-      - SES_REGION=${SES_REGION}
-      - SES_FROM=${SES_FROM}
       - BUSINESS_HOURS_TZ=Asia/Dubai
+      - MAIL_DRIVER=${MAIL_DRIVER}
+      - MAIL_HOST=${MAIL_HOST}
+      - MAIL_PORT=${MAIL_PORT}
+      - MAIL_USER=${MAIL_USER}
+      - MAIL_PASS=${MAIL_PASS}
+      - MAIL_FROM=${MAIL_FROM}
+      - MAIL_NAME=${MAIL_NAME}
     ports:
       - '4000:4000'
     depends_on:
@@ -70,6 +75,13 @@ services:
       - THREECX_QUEUE_DEFAULT=800
       - DEFAULT_ALLOWED_CLIS=${DEFAULT_ALLOWED_CLIS}
       - BUSINESS_HOURS_TZ=Asia/Dubai
+      - MAIL_DRIVER=${MAIL_DRIVER}
+      - MAIL_HOST=${MAIL_HOST}
+      - MAIL_PORT=${MAIL_PORT}
+      - MAIL_USER=${MAIL_USER}
+      - MAIL_PASS=${MAIL_PASS}
+      - MAIL_FROM=${MAIL_FROM}
+      - MAIL_NAME=${MAIL_NAME}
     depends_on:
       - postgres
       - redis

@@ -15,13 +15,20 @@ const EnvSchema = z.object({
 	THREECX_QUEUE_DEFAULT: z.string().default('800'),
 	DEFAULT_ALLOWED_CLIS: z.string().default(''),
 	THREECX_WEBHOOK_SECRET: z.string().min(8),
-	S3_AUDIT_BUCKET: z.string(),
-	S3_REGION: z.string(),
-	KMS_KEY_ALIAS: z.string(),
-	S3_BACKUP_BUCKET: z.string(),
-	SES_REGION: z.string(),
-	SES_FROM: z.string(),
-	BUSINESS_HOURS_TZ: z.string().default('Asia/Dubai')
+	S3_AUDIT_BUCKET: z.string().optional(),
+	S3_REGION: z.string().optional(),
+	KMS_KEY_ALIAS: z.string().optional(),
+	S3_BACKUP_BUCKET: z.string().optional(),
+	BUSINESS_HOURS_TZ: z.string().default('Asia/Dubai'),
+	// Email
+	MAIL_DRIVER: z.enum(['gmail','smtp']).default('gmail'),
+	MAIL_HOST: z.string().default('smtp.gmail.com'),
+	MAIL_PORT: z.string().default('587'),
+	MAIL_USER: z.string().optional(),
+	MAIL_PASS: z.string().optional(),
+	MAIL_FROM: z.string().optional(),
+	MAIL_NAME: z.string().default('AYN Digital'),
+	// PII
 });
 
 export type AppEnv = z.infer<typeof EnvSchema>;
